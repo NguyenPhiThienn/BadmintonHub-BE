@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { VenuesModule } from './venues/venues.module';
+import { CourtsModule } from './courts/courts.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationModule } from './utils/notification.module';
 import { UploadModule } from './upload/upload.module';
@@ -23,6 +24,7 @@ import { UploadModule } from './upload/upload.module';
     AuthModule,
     UsersModule,
     VenuesModule,
+    CourtsModule,
     NotificationModule,
     UploadModule,
   ],
