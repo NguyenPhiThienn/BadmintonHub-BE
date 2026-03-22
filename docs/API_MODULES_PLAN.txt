@@ -1,0 +1,203 @@
+KẾ HOẠCH CÁC MODULE API & TỪ ĐIỂN DỮ LIỆU (MODELS/TABLES) CHO BADMINTONHUB
+(Dựa trên mô tả và mục tiêu đề tài quản lý sân Cầu Lông tích hợp AI)
+
+=========================================
+PHẦN 1: KẾ HOẠCH CÁC MODULE API
+=========================================
+
+1. Module Authentication & Authorization (Xác thực và Phân quyền)
+- POST /api/auth/register : Đăng ký tài khoản (Người chơi, Chủ sân).
+- POST /api/auth/login : Đăng nhập hệ thống.
+- POST /api/auth/refresh-token : Cấp lại token.
+- POST /api/auth/logout : Đăng xuất.
+- POST /api/auth/forgot-password : Quên mật khẩu.
+
+2. Module User (Quản lý hồ sơ người dùng)
+- GET /api/users/profile : Lấy thông tin cá nhân.
+- PUT /api/users/profile : Cập nhật thông tin cá nhân.
+- GET /api/users (Admin) : Quản lý danh sách người dùng.
+
+3. Module Facility / Venue (Quản lý Cơ sở sân cầu lông)
+- GET /api/venues : Tìm kiếm, lọc danh sách cơ sở sân (người chơi dùng để tìm sân).
+- GET /api/venues/{id} : Xem chi tiết một cơ sở sân.
+- POST /api/venues (Chủ sân) : Đăng ký thông tin cơ sở mới.
+- PUT /api/venues/{id} (Chủ sân) : Cập nhật thông tin cơ sở.
+- POST /api/venues/{id}/images (Chủ sân): Thêm hình ảnh cho cơ sở.
+
+4. Module Court (Quản lý Sân lẻ trong một Cơ sở)
+- GET /api/venues/{venueId}/courts : Lấy danh sách các sân lẻ thuộc cơ sở.
+- POST /api/courts (Chủ sân) : Thêm sân mới vào cơ sở.
+- PUT /api/courts/{id} (Chủ sân) : Cập nhật trạng thái/thông tin sân lẻ.
+
+5. Module Pricing & Promotion (Quản lý Bảng giá & Khuyến mãi)
+- GET /api/venues/{venueId}/pricing : Lấy bảng giá của một cơ sở (để người chơi xem giá).
+- POST/PUT /api/pricing (Chủ sân) : Cài đặt giá thuê theo giờ, ngày thường, cuối tuần.
+- POST /api/promotions (Chủ sân, Admin): Tạo mã giảm giá/khuyến mãi.
+- GET /api/promotions/valid : Lấy danh sách khuyến mãi đang áp dụng.
+
+6. Module Availability (Quản lý Lịch trống & Khung giờ)
+- GET /api/availability : Xem các khung giờ còn trống của một sân vào một ngày cụ thể.
+- POST /api/availability/block (Chủ sân) : Đóng khung giờ (bảo trì hoặc có khách offline).
+
+7. Module Booking (Quản lý Đặt sân)
+- POST /api/bookings : Tạo đơn đặt sân mới (Người chơi đặt sân). Có thể đặt nhiều sân/nhiều giờ trong 1 đơn.
+- GET /api/bookings/my-bookings : Xem lịch sử đặt sân của người chơi.
+- GET /api/bookings/venue/{venueId} (Chủ sân) : Quản lý danh sách đơn đặt sân của cơ sở mình.
+- PUT /api/bookings/{id}/status : Cập nhật trạng thái Booking (Xác nhận, Hủy đơn...).
+
+8. Module Payment (Quản lý Thanh toán Online)
+- POST /api/payments/create-url : Tạo link thanh toán online (VNPay, Momo...).
+- GET /api/payments/callback : Xử lý webhook/IPN trả về từ cổng thanh toán.
+- GET /api/payments/{bookingId} : Kiểm tra trạng thái thanh toán của một đơn đặt sân.
+
+9. Module Review & Rating (Đánh giá sân)
+- POST /api/reviews : Người chơi gửi đánh giá, chấm điểm sau khi đá xong.
+- GET /api/reviews/venue/{venueId} : Lấy danh sách đánh giá của cơ sở.
+
+10. Module Revenue & Dashboard (Báo cáo Thống kê cho Chủ sân)
+- GET /api/dashboard/revenue : Thống kê doanh thu theo ngày/tháng/năm.
+- GET /api/dashboard/bookings : Thống kê số lượng đơn đặt sân, tỉ lệ lấp đầy sân.
+
+11. Module AI Integration (Tích hợp AI)
+- POST /api/ai/recommendations : AI gợi ý sân phù hợp.
+- GET /api/ai/analytics/demand : Phân tích và dự đoán khung giờ cao điểm.
+- POST /api/ai/chatbot : Chatbot hỗ trợ trả lời câu hỏi tự động.
+
+12. Module Notification (Hệ thống Thông báo)
+- GET /api/notifications : Lấy danh sách thông báo.
+- PUT /api/notifications/{id}/read : Đánh dấu đã đọc.
+
+=========================================
+PHẦN 2: THIẾT KẾ CÁC TABLE / MODEL CƠ BẢN
+(Cập nhật đầy đủ và chuẩn hóa hơn)
+=========================================
+
+1. Table User (Người dùng)
+- id: UUID (Primary Key)
+- full_name: VARCHAR
+- email: VARCHAR (Unique)
+- phone: VARCHAR (Unique)
+- role: ENUM ('ADMIN', 'COURT_OWNER', 'PLAYER')
+- password_hash: VARCHAR
+- avatar_url: VARCHAR
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
+
+2. Table Venue (Cơ sở sân cầu lông)
+- id: UUID (Primary Key)
+- owner_id: UUID (FK -> User.id)
+- name: VARCHAR
+- address: VARCHAR
+- coordinates: POINT (Lat, Lng)
+- description: TEXT
+- open_time: TIME
+- close_time: TIME
+- average_rating: FLOAT
+- status: ENUM ('ACTIVE', 'INACTIVE')
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
+
+3. Table Venue_Image (Hình ảnh cơ sở - MỚI)
+- id: UUID (Primary Key)
+- venue_id: UUID (FK -> Venue.id)
+- image_url: VARCHAR
+- is_primary: BOOLEAN (Ảnh đại diện chính)
+- created_at: TIMESTAMP
+
+4. Table Court (Sân lẻ thuộc cơ sở)
+- id: UUID (Primary Key)
+- venue_id: UUID (FK -> Venue.id)
+- name: VARCHAR (VD: Sân 1, Sân 2...)
+- type: VARCHAR (Thảm PVC, Sàn gỗ...)
+- status: ENUM ('AVAILABLE', 'MAINTENANCE')
+- created_at: TIMESTAMP
+
+5. Table Pricing (Bảng giá thuê sân)
+- id: UUID (Primary Key)
+- venue_id: UUID (FK -> Venue.id)
+- day_of_week: INT (0-6, hoặc NULL nếu là ngày đặc biệt/lễ)
+- start_time: TIME
+- end_time: TIME
+- price_per_hour: DECIMAL
+- created_at: TIMESTAMP
+
+6. Table Court_Unavailable_Time (Khoá lịch biểu/Bảo trì - MỚI)
+- id: UUID (Primary Key)
+- court_id: UUID (FK -> Court.id)
+- start_datetime: TIMESTAMP
+- end_datetime: TIMESTAMP
+- reason: VARCHAR (VD: "Bảo trì", "Sửa điện")
+- created_at: TIMESTAMP
+
+7. Table Promotion (Khuyến mãi, Mã giảm giá - MỚI)
+- id: UUID (Primary Key)
+- venue_id: UUID (FK -> Venue.id, NULL nếu là KM toàn hệ thống của Admin)
+- code: VARCHAR (VD: "MUAHE2024")
+- discount_percentage: FLOAT
+- max_discount_amount: DECIMAL
+- start_date: TIMESTAMP
+- end_date: TIMESTAMP
+- is_active: BOOLEAN
+- created_at: TIMESTAMP
+
+8. Table Booking (Đơn đặt sân tổng)
+- id: UUID (Primary Key)
+- player_id: UUID (FK -> User.id)
+- venue_id: UUID (FK -> Venue.id)
+- promotion_id: UUID (FK -> Promotion.id, NULLable)
+- total_price: DECIMAL (Tổng tiền trước giảm giá)
+- final_price: DECIMAL (Tiền phải thanh toán sau giảm giá)
+- status: ENUM ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED')
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
+
+9. Table Booking_Detail (Chi tiết đơn đặt sân - MỚI)
+(Tách ra để 1 lần đặt có thể book NHIỀU sân hoặc NHIỀU khung giờ khác nhau)
+- id: UUID (Primary Key)
+- booking_id: UUID (FK -> Booking.id)
+- court_id: UUID (FK -> Court.id)
+- booking_date: DATE
+- start_time: TIME
+- end_time: TIME
+- price: DECIMAL (Giá của khung giờ này)
+- created_at: TIMESTAMP
+
+10. Table Payment (Thanh toán)
+- id: UUID (Primary Key)
+- booking_id: UUID (FK -> Booking.id)
+- amount: DECIMAL
+- method: VARCHAR ('VNPAY', 'MOMO', 'CASH')
+- status: ENUM ('PENDING', 'SUCCESS', 'FAILED', 'REFUNDED')
+- transaction_id: VARCHAR
+- created_at: TIMESTAMP
+
+11. Table Review (Đánh giá)
+- id: UUID (Primary Key)
+- venue_id: UUID (FK -> Venue.id)
+- player_id: UUID (FK -> User.id)
+- rating: INT (1 tới 5 sao)
+- comment: TEXT
+- created_at: TIMESTAMP
+
+12. Table Notification (Thông báo)
+- id: UUID (Primary Key)
+- user_id: UUID (FK -> User.id)
+- title: VARCHAR
+- body: TEXT
+- type: VARCHAR ('BOOKING_REMINDER', 'PROMOTION', 'PAYMENT_SUCCESS'...)
+- is_read: BOOLEAN
+- created_at: TIMESTAMP
+
+13. Table Player_Search_History (Lịch sử tìm kiếm của người chơi - MỚI)
+(Dùng để train model AI cho việc gợi ý sân chính xác hơn)
+- id: UUID (Primary Key)
+- player_id: UUID (FK -> User.id)
+- searched_address: VARCHAR
+- searched_coordinates: POINT
+- created_at: TIMESTAMP
+
+14. Table AI_Analysis_Metadata (Dữ liệu phân tích tĩnh của AI)
+- id: UUID
+- venue_id: UUID -> Venue.id
+- peak_hours_prediction: JSON (Lưu trữ dự đoán các khung giờ hot)
+- last_analyzed_at: TIMESTAMP
