@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, Put, Req, UseGuards, HttpCode, HttpStatus 
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, ChangePasswordDto, RefreshTokenDto, UpdateProfileDto, ForgotPasswordDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, ChangePasswordDto, RefreshTokenDto, ForgotPasswordDto } from './dto/auth.dto';
 import { ApiResponseType } from '../utils/response.util';
 import { JwtGuard } from './jwt-auth.guard';
 
@@ -50,22 +50,6 @@ export class AuthController {
   @Post('logout')
   async logout(@Req() req: any): Promise<ApiResponseType> {
     return await this.authService.logout(req.user.id);
-  }
-
-  @ApiOperation({ summary: 'Lấy thông tin người dùng hiện tại' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtGuard)
-  @Get('profile')
-  async getProfile(@Req() req: any): Promise<ApiResponseType> {
-    return await this.authService.getProfile(req.user.id);
-  }
-
-  @ApiOperation({ summary: 'Cập nhật hồ sơ cá nhân' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtGuard)
-  @Put('profile')
-  async updateProfile(@Req() req: any, @Body() dto: UpdateProfileDto): Promise<ApiResponseType> {
-    return await this.authService.updateProfile(req.user.id, dto);
   }
 
   @ApiOperation({ summary: 'Đổi mật khẩu' })

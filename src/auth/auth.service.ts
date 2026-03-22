@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { User, UserRole } from '../users/schemas/user.schema';
-import { RegisterDto, LoginDto, ChangePasswordDto, RefreshTokenDto, UpdateProfileDto, ForgotPasswordDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, ChangePasswordDto, RefreshTokenDto, ForgotPasswordDto } from './dto/auth.dto';
 import { ApiResponseType, createApiResponse } from '../utils/response.util';
 
 @Injectable()
@@ -121,19 +121,6 @@ export class AuthService {
     return createApiResponse(null, 'Vui lòng kiểm tra email để đặt lại mật khẩu', HttpStatus.OK);
   }
 
-  async getProfile(userId: string): Promise<ApiResponseType> {
-    const user = await this.userModel.findById(userId).select('-password_hash').exec();
-    if (!user) throw new HttpException('Người dùng không tồn tại', HttpStatus.NOT_FOUND);
-
-    return createApiResponse(user, 'Lấy thông tin thành công', HttpStatus.OK);
-  }
-
-  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<ApiResponseType> {
-    const user = await this.userModel.findByIdAndUpdate(userId, { $set: dto }, { new: true }).select('-password_hash').exec();
-    if (!user) throw new HttpException('Người dùng không tồn tại', HttpStatus.NOT_FOUND);
-
-    return createApiResponse(user, 'Cập nhật thông tin thành công', HttpStatus.OK);
-  }
 
   async changePassword(userId: string, dto: ChangePasswordDto): Promise<ApiResponseType> {
     if (dto.confirmPassword && dto.newPassword !== dto.confirmPassword) {
