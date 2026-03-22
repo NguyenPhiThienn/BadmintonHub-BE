@@ -9,6 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { VenuesModule } from './venues/venues.module';
 import { CourtsModule } from './courts/courts.module';
+import { PricingsModule } from './pricings/pricings.module';
+import { PromotionsModule } from './promotions/promotions.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationModule } from './utils/notification.module';
 import { UploadModule } from './upload/upload.module';
@@ -25,6 +27,8 @@ import { UploadModule } from './upload/upload.module';
     UsersModule,
     VenuesModule,
     CourtsModule,
+    PricingsModule,
+    PromotionsModule,
     NotificationModule,
     UploadModule,
   ],
