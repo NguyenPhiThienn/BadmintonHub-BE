@@ -1,144 +1,91 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsString,
-  MinLength,
-  IsOptional,
-  IsDateString,
-} from 'class-validator';
+import { IsNotEmpty, IsString, MinLength, IsOptional, IsEmail, IsEnum } from 'class-validator';
+import { UserRole } from '../../users/schemas/user.schema';
+
+export class RegisterDto {
+  @ApiProperty({ example: 'Nguyen Van A' })
+  @IsNotEmpty()
+  @IsString()
+  full_name: string;
+
+  @ApiProperty({ example: 'a@example.com' })
+  @IsNotEmpty()
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: '0901234567' })
+  @IsNotEmpty()
+  @IsString()
+  phone: string;
+
+  @ApiProperty({ example: 'Password123' })
+  @IsNotEmpty()
+  @MinLength(6)
+  password: string;
+
+  @ApiPropertyOptional({ enum: UserRole, example: UserRole.PLAYER })
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+}
 
 export class LoginDto {
-  @ApiPropertyOptional({
-    example: 'NV001',
-    description: 'Mã nhân viên hoặc số điện thoại để đăng nhập',
-  })
-  @IsOptional()
+  @ApiProperty({ example: 'a@example.com', description: 'Email hoặc số điện thoại' })
+  @IsNotEmpty()
   @IsString()
-  identifier?: string;
+  identifier: string;
 
-  @ApiPropertyOptional({
-    example: 'NV001',
-    description: 'Mã nhân viên (alias cho identifier)',
-  })
-  @IsOptional()
+  @ApiProperty({ example: 'Password123' })
+  @IsNotEmpty()
   @IsString()
-  employeeCode?: string;
-
-  @ApiProperty({
-    example: 'Admin@123',
-    description: 'Mật khẩu của tài khoản, tối thiểu 6 ký tự'
-  })
-  @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
-  @IsString()
-  @MinLength(6, { message: 'Mật khẩu phải có ít nhất 6 ký tự' })
   password: string;
 }
 
 export class ChangePasswordDto {
-  @ApiProperty({
-    example: 'OldPassword@123',
-    description: 'Mật khẩu hiện tại'
-  })
-  @IsNotEmpty({ message: 'Mật khẩu hiện tại không được để trống' })
+  @ApiProperty({ example: 'OldPassword123' })
+  @IsNotEmpty()
   @IsString()
   currentPassword: string;
 
-  @ApiProperty({
-    example: 'NewPassword@123',
-    description: 'Mật khẩu mới, tối thiểu 6 ký tự'
-  })
-  @IsNotEmpty({ message: 'Mật khẩu mới không được để trống' })
+  @ApiProperty({ example: 'NewPassword123' })
+  @IsNotEmpty()
   @IsString()
-  @MinLength(6, { message: 'Mật khẩu mới phải có ít nhất 6 ký tự' })
+  @MinLength(6)
   newPassword: string;
 
-  @ApiPropertyOptional({
-    example: 'NewPassword@123',
-    description: 'Xác nhận mật khẩu mới'
-  })
+  @ApiPropertyOptional({ example: 'NewPassword123' })
   @IsOptional()
   @IsString()
   confirmPassword?: string;
 }
 
-
 export class RefreshTokenDto {
-  @ApiProperty({
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    description: 'Refresh token để lấy access token mới'
-  })
-  @IsNotEmpty({ message: 'Refresh token không được để trống' })
+  @ApiProperty({ example: 'eyJhbGciOiJIUz...' })
+  @IsNotEmpty()
   @IsString()
   refreshToken: string;
 }
 
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'a@example.com' })
+  @IsNotEmpty()
+  @IsString()
+  email: string;
+}
+
 export class UpdateProfileDto {
-  @ApiPropertyOptional({ example: 'Nguyễn Văn A' })
+  @ApiPropertyOptional({ example: 'Nguyen Van B' })
   @IsOptional()
   @IsString()
-  fullName?: string;
+  full_name?: string;
 
-  @ApiPropertyOptional({ example: '1990-01-15' })
-  @IsOptional()
-  @IsDateString()
-  dateOfBirth?: string;
-
-  @ApiPropertyOptional({ example: 'Hà Nội' })
+  @ApiPropertyOptional({ example: '0901234568' })
   @IsOptional()
   @IsString()
-  hometown?: string;
+  phone?: string;
 
-  @ApiPropertyOptional({ example: '0901234567' })
+  @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
   @IsOptional()
   @IsString()
-  phoneNumber?: string;
-
-  @ApiPropertyOptional({ example: '03343434' })
-  @IsOptional()
-  @IsString()
-  identityCard?: string;
-
-  @ApiPropertyOptional({ example: 'Kỹ sư' })
-  @IsOptional()
-  @IsString()
-  qualification?: string;
-
-  @ApiPropertyOptional({ example: 'data:image/png;base64,...' })
-  @IsOptional()
-  @IsString()
-  digitalSignature?: string;
-
-  @ApiPropertyOptional({ example: 'https://example.com/avatar.png' })
-  @IsOptional()
-  @IsString()
-  avatar?: string;
-}
-
-export class RequestOtpDto {
-  @ApiProperty({
-    example: 'NV001',
-    description: 'Mã nhân viên để yêu cầu OTP',
-  })
-  @IsNotEmpty({ message: 'Mã nhân viên không được để trống' })
-  @IsString()
-  employeeCode: string;
-}
-
-export class VerifyOtpDto {
-  @ApiProperty({
-    example: 'NV001',
-    description: 'Mã nhân viên',
-  })
-  @IsNotEmpty({ message: 'Mã nhân viên không được để trống' })
-  @IsString()
-  employeeCode: string;
-
-  @ApiProperty({
-    example: '123456',
-    description: 'Mã OTP gồm 6 chữ số',
-  })
-  @IsNotEmpty({ message: 'Mã OTP không được để trống' })
-  @IsString()
-  @MinLength(6, { message: 'Mã OTP phải có 6 chữ số' })
-  otpCode: string;
+  avatar_url?: string;
 }
