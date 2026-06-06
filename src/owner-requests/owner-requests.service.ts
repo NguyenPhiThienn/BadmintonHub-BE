@@ -6,11 +6,13 @@ import { UsersService } from '../users/users.service';
 import { ApiResponseType, createApiResponse } from '../utils/response.util';
 import { CreateOwnerRequestDto, ReviewOwnerRequestDto } from './dto/owner-request.dto';
 import { OwnerRequest, OwnerRequestDocument, OwnerRequestStatus } from './schemas/owner-request.schema';
+import { NotificationType } from '../notifications/schemas/notification.schema';
 
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { VenueStatus } from '../venues/schemas/venue.schema';
 import { VenuesService } from '../venues/venues.service';
 import { AppGateway } from '../gateways/app.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class OwnerRequestsService {
@@ -20,6 +22,7 @@ export class OwnerRequestsService {
     private usersService: UsersService,
     private venuesService: VenuesService,
     private appGateway: AppGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(userId: string, dto: CreateOwnerRequestDto): Promise<ApiResponseType> {
@@ -52,6 +55,27 @@ export class OwnerRequestsService {
       ...dto,
       status: OwnerRequestStatus.PENDING
     });
+
+    // Send notification to user
+    await this.notificationsService.sendAndSaveNotification(
+      userId,
+      'Đơn đăng ký đã được gửi',
+      'Đơn đăng ký chủ sân của bạn đã được gửi và đang chờ xét duyệt.',
+      NotificationType.OWNER_REQUEST_SUBMITTED,
+      { requestId: newRequest._id.toString() },
+    );
+
+    // Send notification to all admins
+    const admins = await this.userModel.find({ role: 'ADMIN' }).select('_id').exec();
+    for (const admin of admins) {
+      await this.notificationsService.sendAndSaveNotification(
+        admin._id.toString(),
+        'Đơn đăng ký chủ sân mới',
+        'Bạn có đơn đăng ký chủ sân mới cần xét duyệt.',
+        NotificationType.OWNER_REQUEST_PENDING,
+        { requestId: newRequest._id.toString() },
+      );
+    }
 
     // Broadcast pending count update to all admins
     this.appGateway.broadcast('admin:pending-updated', {});
@@ -94,6 +118,30 @@ export class OwnerRequestsService {
     existingRequest.rejectReason = undefined;
 
     await existingRequest.save();
+
+    // Send notification to user
+    await this.notificationsService.sendAndSaveNotification(
+      userId,
+      'Đơn đăng ký đã được cập nhật',
+      'Đơn đăng ký chủ sân của bạn đã được cập nhật và đang chờ xét duyệt.',
+      NotificationType.OWNER_REQUEST_SUBMITTED,
+      { requestId: existingRequest._id.toString() },
+    );
+
+    // Send notification to all admins
+    const admins = await this.userModel.find({ role: 'ADMIN' }).select('_id').exec();
+    for (const admin of admins) {
+      await this.notificationsService.sendAndSaveNotification(
+        admin._id.toString(),
+        'Đơn đăng ký chủ sân được cập nhật',
+        'Một đơn đăng ký chủ sân đã được cập nhật và cần xét duyệt lại.',
+        NotificationType.OWNER_REQUEST_PENDING,
+        { requestId: existingRequest._id.toString() },
+      );
+    }
+
+    // Broadcast pending count update to all admins
+    this.appGateway.broadcast('admin:pending-updated', {});
 
     return createApiResponse(existingRequest, 'Cập nhật và nộp lại đơn đăng ký thành công', HttpStatus.OK);
   }
@@ -207,15 +255,17 @@ export class OwnerRequestsService {
 
     await request.save();
 
+    const userId = request.userId.toString();
+
     // If approved, update user role to OWNER and create a default venue
     if (dto.status === OwnerRequestStatus.APPROVED) {
-      await this.usersService.update(request.userId.toString(), {
+      await this.usersService.update(userId, {
         role: UserRole.COURT_OWNER as any,
       } as any);
 
       // Auto-create venue from the owner's request info (ACTIVE since owner is approved)
-      const user = await this.userModel.findById(request.userId).exec();
-      await this.venuesService.create(request.userId.toString(), {
+      const user = await this.userModel.findById(userId).exec();
+      await this.venuesService.create(userId, {
         name: `Cơ sở của ${user?.fullName || 'Chủ sân'}`,
         address: request.courtAddress,
         lat: 10.8231, // default coordinates (Ho Chi Minh City center)
@@ -225,6 +275,24 @@ export class OwnerRequestsService {
         closeTime: '22:00',
         pricePerHour: 60000,
       }, VenueStatus.ACTIVE);
+
+      // Send approval notification to user
+      await this.notificationsService.sendAndSaveNotification(
+        userId,
+        'Đơn đăng ký được duyệt',
+        'Chúc mừng! Đơn đăng ký chủ sân của bạn đã được phê duyệt. Bây giờ bạn có thể quản lý cơ sở sân của mình.',
+        NotificationType.OWNER_REQUEST_APPROVED,
+        { requestId: request._id.toString() },
+      );
+    } else if (dto.status === OwnerRequestStatus.REJECTED) {
+      // Send rejection notification to user
+      await this.notificationsService.sendAndSaveNotification(
+        userId,
+        'Đơn đăng ký bị từ chối',
+        `Đơn đăng ký chủ sân của bạn đã bị từ chối. Lý do: ${dto.rejectReason}`,
+        NotificationType.OWNER_REQUEST_REJECTED,
+        { requestId: request._id.toString(), rejectReason: dto.rejectReason },
+      );
     }
 
     const populatedRequest = await this.ownerRequestModel.findById(id)

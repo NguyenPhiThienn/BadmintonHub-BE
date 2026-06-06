@@ -58,6 +58,12 @@ export class Venue {
 
   @Prop()
   statusReason: string;
+
+  @Prop({ type: [String], default: [] })
+  venueImages: string[];
+
+  @Prop()
+  businessLicense: string;
 }
 
 export const VenueSchema = SchemaFactory.createForClass(Venue);

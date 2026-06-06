@@ -67,6 +67,17 @@ export class CreateVenueDto {
   @ValidateNested({ each: true })
   @Type(() => CourtDto)
   courts?: CourtDto[];
+
+  @ApiPropertyOptional({ example: ['https://example.com/venue1.jpg', 'https://example.com/venue2.jpg'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  venueImages?: string[];
+
+  @ApiPropertyOptional({ example: 'https://example.com/license.pdf' })
+  @IsOptional()
+  @IsString()
+  businessLicense?: string;
 }
 
 export class UpdateVenueDto extends PartialType(CreateVenueDto) {}
