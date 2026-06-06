@@ -25,6 +25,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { VenuesModule } from './venues/venues.module';
 import { MailModule } from './mail/mail.module';
 import { CouponsModule } from './coupons/coupons.module';
+import { RecurringBookingsModule } from './recurring-bookings/recurring-bookings.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -53,6 +54,7 @@ import { CouponsModule } from './coupons/coupons.module';
     OwnerRequestsModule,
     MailModule,
     CouponsModule,
+    RecurringBookingsModule,
   ],
   controllers: [AppController],
   providers: [
